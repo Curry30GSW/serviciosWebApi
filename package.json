@@ -1,0 +1,23 @@
+{
+  "name": "as400api",
+  "version": "1.0.0",
+  "description": "API para as400",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "Allan Tobar",
+  "license": "ISC",
+  "dependencies": {
+    "as400api": "file:",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "jsonwebtoken": "^9.0.2",
+    "odbc": "^2.4.9"
+  }
+}
