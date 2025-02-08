@@ -18,135 +18,141 @@ const cuentaF6Model = {
 
             // Consulta de los datos de la cuenta
             const queryCuentaData = `
-                SELECT 
-                    ${tableACP05}.DIST05, 
-                    RTRIM(${tableACP05}.DESC05),
-                    ${tableACP05}.FEVI05, 
-                    ${tableACP05}.NOMI05, 
-                    ${tableACP05}.ENTI05, 
-                    ${tableACP05}.DEPE05, 
-                    ${tableACP05}.AAUX05, 
-                    RTRIM(${tableACP030}.DESC03) AS DCARTERA, 
-                    RTRIM(${tableACP04}.DESC04), 
-                    RTRIM(${tableACP02}.DESC02), 
-                    RTRIM(${tableACP03}.DESC03) AS AGENCIA, 
-                    ${tableACP09}.ASAL09, 
-                    ${tableACP09}.ACUO09, 
-                    ${tableACP09}.DSAL09, 
-                    ${tableBIOTRACE}.IDCUENTA
-                FROM 
-                    ${tableACP05}, ${tableACP030}, ${tableACP04}, ${tableACP02}, ${tableACP03}, ${tableACP09}
-                LEFT JOIN 
-                    ${tableBIOTRACE} 
-                ON 
-                    ${tableACP09}.NCTA09 = ${tableBIOTRACE}.NROCUENTA 
-                WHERE 
-                    ${tableACP05}.EMPR05 = '01' 
-                    AND ${tableACP05}.NCTA05 = ? 
-                    AND ${tableACP05}.AAUX05 = ${tableACP030}.AAUX03 
-                    AND ${tableACP05}.NOMI05 = ${tableACP04}.NOMI04  
-                    AND ${tableACP05}.DEPE05 = ${tableACP02}.DEPE02  
-                    AND ${tableACP05}.ENTI05 = ${tableACP02}.ENTI02  
-                    AND ${tableACP05}.DIST05 = ${tableACP03}.DIST03  
-                    AND ${tableACP05}.NCTA05 = ${tableACP09}.NCTA09
-            `;
+                    SELECT 
+                        ${tableACP05}.DIST05, 
+                        ${tableACP05}.DESC05,
+                        ${tableACP05}.FEVI05, 
+                        ${tableACP05}.NOMI05, 
+                        ${tableACP05}.ENTI05, 
+                        ${tableACP05}.DEPE05, 
+                        ${tableACP05}.AAUX05,
+                        ${tableACP05}.NNIT05,
+                        ${tableACP030}.DESC03 AS DCARTERA, 
+                        ${tableACP04}.DESC04, 
+                        ${tableACP02}.DESC02, 
+                        ${tableACP03}.DESC03 AS AGENCIA, 
+                        ${tableACP09}.ASAL09, 
+                        ${tableACP09}.ACUO09, 
+                        ${tableACP09}.DSAL09, 
+                        ${tableBIOTRACE}.IDCUENTA
+                    FROM 
+                        ${tableACP05}, ${tableACP030}, ${tableACP04}, ${tableACP02}, ${tableACP03}, ${tableACP09}
+                    LEFT JOIN 
+                        ${tableBIOTRACE} 
+                    ON 
+                        ${tableACP09}.NCTA09 = ${tableBIOTRACE}.NROCUENTA 
+                    WHERE 
+                        ${tableACP05}.EMPR05 = '01' 
+                        AND ${tableACP05}.NCTA05 = ? 
+                        AND ${tableACP05}.AAUX05 = ${tableACP030}.AAUX03 
+                        AND ${tableACP05}.NOMI05 = ${tableACP04}.NOMI04  
+                        AND ${tableACP05}.DEPE05 = ${tableACP02}.DEPE02  
+                        AND ${tableACP05}.ENTI05 = ${tableACP02}.ENTI02  
+                        AND ${tableACP05}.DIST05 = ${tableACP03}.DIST03  
+                        AND ${tableACP05}.NCTA05 = ${tableACP09}.NCTA09
+                `;
 
             const result = await executeQuery(queryCuentaData, [cuenta]);
-
-            //CREDITO ESPECIAL
+            // CREDITO ESPECIAL
             const cEspQuery = `
-            SELECT SUM(SCAP13) AS Credito_Especial
-            FROM ${tableACP13} 
-            WHERE scap13 > 0 
-            AND ncta13 = ? 
-            AND EXISTS (
-                SELECT * 
-                FROM ${tableACP06} 
-                WHERE tcre13 = tcre06 
-                AND clas06 = 'E'
-            )
-        `;
-            const vlrCredEsp = await executeQuery(cEspQuery, [cuenta]);
+                    SELECT SUM(SCAP13) AS Credito_Especial
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                        AND EXISTS (
+                            SELECT * 
+                            FROM ${tableACP06} 
+                            WHERE tcre13 = tcre06 
+                            AND clas06 = 'E'
+                        )
+                    `;
+            const vlrCredEspResult = await executeQuery(cEspQuery, [cuenta]);
+            const vlrCredEsp = vlrCredEspResult[0]?.CREDITO_ESPECIAL ?? 0;
 
-            //VALOR CUOTA CREDITO ESPECIAL
+
+            // VALOR CUOTA CREDITO ESPECIAL
             const cEspCuoQuery = `
-            SELECT SUM(INTI13) AS Cou_Cred_Esp
-            FROM ${tableACP13} 
-            WHERE scap13 > 0 
-            AND ncta13 = ? 
-            AND EXISTS (
-                SELECT * 
-                FROM ${tableACP06} 
-                WHERE tcre13 = tcre06 
-                AND clas06 = 'E'
-            )
-        `;
-            const vlrCredCouEsp = await executeQuery(cEspCuoQuery, [cuenta]);
+                    SELECT SUM(INTI13) AS Cou_Cred_Esp
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                    AND EXISTS (
+                        SELECT * 
+                            FROM ${tableACP06} 
+                            WHERE tcre13 = tcre06 
+                            AND clas06 = 'E'
+                                             )
+`;
+            const vlrCredCouEspResult = await executeQuery(cEspCuoQuery, [cuenta]);
+            const vlrCredCouEsp = vlrCredCouEspResult[0]?.COU_CRED_ESP ?? 0;
 
 
-            //CREDITO ORDINARIO
+            // CREDITO ORDINARIO
             const cOrdQuery = `
-            SELECT SUM(SCAP13) AS Credito_Ordinario
-            FROM ${tableACP13} 
-            WHERE scap13 > 0 
-            AND ncta13 = ? 
-            AND EXISTS (
-                SELECT * 
-                FROM ${tableACP06} 
-                WHERE tcre13 = tcre06 
-                AND clas06 = 'O'
-            )
-        `;
-            const vlrCredOrd = await executeQuery(cOrdQuery, [cuenta]);
+                    SELECT SUM(SCAP13) AS Credito_Ordinario
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                    AND EXISTS (
+                        SELECT * 
+                        FROM ${tableACP06} 
+                        WHERE tcre13 = tcre06 
+                        AND clas06 = 'O'
+                    )
+                `;
+            const vlrCredOrdResult = await executeQuery(cOrdQuery, [cuenta]);
+            const vlrCredOrd = vlrCredOrdResult[0]?.CREDITO_ORDINARIO ?? 0;
 
-            //VALOR CUOTA CREDITO ORDINARIO
+            // VALOR CUOTA CREDITO ORDINARIO
             const cOrdCuoQuery = `
-            SELECT SUM(INTI13) AS Cou_Cred_Ord
-            FROM ${tableACP13} 
-            WHERE scap13 > 0 
-            AND ncta13 = ? 
-            AND EXISTS (
-                SELECT * 
-                FROM ${tableACP06} 
-                WHERE tcre13 = tcre06 
-                AND clas06 = 'O'
-            )
-        `;
-            const vlrCredCouOrd = await executeQuery(cOrdCuoQuery, [cuenta]);
-
+                    SELECT SUM(INTI13) AS Cou_Cred_Ord
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                    AND EXISTS (
+                        SELECT * 
+                        FROM ${tableACP06} 
+                        WHERE tcre13 = tcre06 
+                        AND clas06 = 'O'
+                    )
+                `;
+            const vlrCredCouOrdResult = await executeQuery(cOrdCuoQuery, [cuenta]);
+            const vlrCredCouOrd = vlrCredCouOrdResult[0]?.COU_CRED_ORD ?? 0;
             // Ahora calculamos los valores comprometidos y vencidos 
 
             const creOrdQuery = `
-                SELECT SUM(SCAP13) AS VRCOMORD 
-                FROM ${tableACP13} 
-                WHERE scap13 > 0 
-                AND ncta13 = ? 
-                AND EXISTS (
-                    SELECT * 
-                    FROM ${tableACP06} 
-                    WHERE tcre13 = tcre06 
-                    AND clas06 = 'O'
-                )
-            `;
+                    SELECT SUM(SCAP13) AS VRCOMORD 
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                    AND EXISTS (
+                        SELECT * 
+                        FROM ${tableACP06} 
+                        WHERE tcre13 = tcre06 
+                        AND clas06 = 'O'
+                    )
+                `;
             const vrCreOrd = await executeQuery(creOrdQuery, [cuenta]);
             const vrComOrd = Math.round(vrCreOrd[0].VRCOMORD);
 
             const creEspecialQuery = `
-                SELECT SUM(SCAP13 / MONT13) AS VRCOMESP 
-                FROM ${tableACP13} 
-                WHERE scap13 > 0 
-                AND ncta13 = ? 
-                AND EXISTS (
-                    SELECT * 
-                    FROM ${tableACP06} 
-                    WHERE tcre13 = tcre06 
-                    AND clas06 = 'E'
-                ) AND tcre13 != 60
-            `;
+                    SELECT SUM(SCAP13 / MONT13) AS VRCOMESP 
+                    FROM ${tableACP13} 
+                    WHERE scap13 > 0 
+                    AND ncta13 = ? 
+                    AND EXISTS (
+                        SELECT * 
+                        FROM ${tableACP06} 
+                        WHERE tcre13 = tcre06 
+                        AND clas06 = 'E'
+                    ) AND tcre13 != 60
+                `;
             const vrCreEsp = await executeQuery(creEspecialQuery, [cuenta]);
             const vrComEsp = Math.round(vrCreEsp[0].VRCOMESP);
-
+            // Comprometido y CUPO
+            const asal09 = Number(result[0]?.ASAL09 ?? 0);
             const comprometido = vrComOrd + vrComEsp;
+            const cupo = Math.round((asal09 * 0.95) - comprometido);
 
             // Ahora obtenemos los valores vencidos
             const fec = (new Date().getFullYear() - 1900).toString();
@@ -154,39 +160,40 @@ const cuentaF6Model = {
             const corte = fec + mes;
 
             const totalVenEspQuery = `
-                SELECT SUM(CCAP14 + CINT14 + SIMO14 + SCJO14 + CICO14) AS VENESP 
-                FROM ${tableACP14}, ${tableACP13} 
-                WHERE EMPR13 = EMPR14 
-                AND NCRE13 = NCRE14 
-                AND VCTO14 < ? 
-                AND NCTA14 = ? 
-                AND NCTA14 = NCTA13 
-                AND CCAP14 > 0 
-                AND EXISTS (SELECT * FROM ${tableACP06} WHERE TCRE13 = TCRE06 AND CLAS06 = 'E')
-            `;
+            SELECT SUM(CCAP14 + CINT14 + SIMO14 + SCJO14 + CICO14) AS VENESP 
+            FROM ${tableACP14}, ${tableACP13} 
+            WHERE EMPR13 = EMPR14 
+            AND NCRE13 = NCRE14 
+            AND VCTO14 < ? 
+            AND NCTA14 = ? 
+            AND NCTA14 = NCTA13 
+            AND CCAP14 > 0 
+            AND EXISTS (SELECT * FROM ${tableACP06} WHERE TCRE13 = TCRE06 AND CLAS06 = 'E')
+        `;
             const totalVenEspResult = await executeQuery(totalVenEspQuery, [corte, cuenta]);
-            const vrTotalEsp = totalVenEspResult[0].VENESP;
+            const vrTotalEsp = totalVenEspResult[0]?.VENESP ?? 0;
 
             const totalVenOrdQuery = `
-                SELECT SUM(CCAP14 + CINT14 + SIMO14 + SCJO14 + CICO14) AS VENORD 
-                FROM ${tableACP14}, ${tableACP13} 
-                WHERE EMPR13 = EMPR14 
-                AND NCRE13 = NCRE14 
-                AND VCTO14 < ? 
-                AND NCTA14 = ? 
-                AND NCTA14 = NCTA13 
-                AND CCAP14 > 0 
-                AND EXISTS (SELECT * FROM ${tableACP06} WHERE TCRE13 = TCRE06 AND CLAS06 = 'O')
-            `;
+            SELECT SUM(CCAP14 + CINT14 + SIMO14 + SCJO14 + CICO14) AS VENORD 
+            FROM ${tableACP14}, ${tableACP13} 
+            WHERE EMPR13 = EMPR14 
+            AND NCRE13 = NCRE14 
+            AND VCTO14 < ? 
+            AND NCTA14 = ? 
+            AND NCTA14 = NCTA13 
+            AND CCAP14 > 0 
+            AND EXISTS (SELECT * FROM ${tableACP06} WHERE TCRE13 = TCRE06 AND CLAS06 = 'O')
+        `;
             const totalVenOrdResult = await executeQuery(totalVenOrdQuery, [corte, cuenta]);
-            const vrTotalOrd = totalVenOrdResult[0].VENORD;
+            const vrTotalOrd = totalVenOrdResult[0]?.VENORD ?? 0;
+
 
             // Obtención de la fecha de distribución de aportes
             const sqlFechaDistribucion = `
-                SELECT CSAL09, FECH09 
-                FROM ${tableACP09A} 
-                WHERE ncta09 = ?
-            `;
+                    SELECT CSAL09, FECH09 
+                    FROM ${tableACP09A} 
+                    WHERE ncta09 = ?
+                `;
             const fechaDistribucion = await executeQuery(sqlFechaDistribucion, [cuenta]);
 
             let salo09 = 0;
@@ -195,17 +202,27 @@ const cuentaF6Model = {
                 salo09 = fechaDistribucion[0].CSAL09;
                 fecha09 = fechaDistribucion[0].FECH09;
             }
+            const intVencidosQuery = `
+                SELECT SUM(CINT14 + SIMO14 + SCJO14 + CICO14) AS IntVencidos
+                FROM ${tableACP14}
+                WHERE NCTA14 = ?
+                AND CCAP14 > 0
+                AND VCTO14 <= ?
+            `;
+
+            const intVencidosResult = await executeQuery(intVencidosQuery, [cuenta, corte]);
+            const intVencidos = intVencidosResult[0]?.INTVENCIDOS ?? 0;
 
             // Total de deuda
-            const deudaTotal = vrTotalEsp + vrTotalOrd + comprometido;
+            const deudaTotal = intVencidos + vlrCredEsp + vlrCredOrd;
 
             const detallesCred = `
-            SELECT 
-            TCRE13, NCRE13, MOGA13, SCAP13, CCAP13, CINT13
-            FROM ${tableACP13} 
-            WHERE scap13 > 0 
-            AND ncta13 = ? 
-        `;
+                SELECT 
+                TCRE13, NCRE13, MOGA13, SCAP13, CCAP13, CINT13
+                FROM ${tableACP13} 
+                WHERE scap13 > 0 
+                AND ncta13 = ? 
+            `;
             const detallesCreditos = await executeQuery(detallesCred, [cuenta]);
 
             return {
@@ -215,7 +232,9 @@ const cuentaF6Model = {
                 vlrCredOrd,
                 vlrCredCouOrd,
                 comprometido,
+                cupo: cupo,
                 deudaTotal,
+                intVencidos,
                 vrTotalEsp,
                 vrTotalOrd,
                 detallesCreditos,
