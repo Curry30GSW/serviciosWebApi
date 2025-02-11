@@ -216,14 +216,88 @@ const cuentaF6Model = {
             // Total de deuda
             const deudaTotal = intVencidos + vlrCredEsp + vlrCredOrd;
 
+            // Consulta para obtener los créditos
             const detallesCred = `
-                SELECT 
-                TCRE13, NCRE13, MOGA13, SCAP13, CCAP13, CINT13
-                FROM ${tableACP13} 
-                WHERE scap13 > 0 
-                AND ncta13 = ? 
-            `;
+             SELECT 
+             "TCRE13", "NCRE13", "MOGA13", "SCAP13", "CCAP13", "CINT13"
+             FROM COLIB.ACP13 
+             WHERE "SCAP13" > 0 
+             AND "NCTA13" = ? 
+         `;
+
+            // Ejecutar consulta
             const detallesCreditos = await executeQuery(detallesCred, [cuenta]);
+
+            // Inicializar arrays para almacenar datos
+            const trec = [];
+            const ncre = [];
+            const moga = [];
+            const scap = [];
+            const vencidos = [];
+            const cuotasCapital = [];
+            const cuotasInteres = [];
+            const cuotasTotales = [];
+
+            // Iterar sobre cada registro y almacenar los valores
+            for (let i = 0; i < detallesCreditos.length; i++) {
+                const registro = detallesCreditos[i];
+                trec.push(registro.TCRE13);
+                ncre.push(registro.NCRE13);
+                moga.push(registro.MOGA13);
+                scap.push(registro.SCAP13);
+
+                // Consulta para obtener SALDOVDO (Vencido)
+                const vencidoQuery = `
+                 SELECT SUM(ACP14.CCAP14 + ACP14.CINT14 + ACP14.SIMO14 + ACP14.SCJO14 + CICO14) AS SALDOVDO
+                 FROM COLIB.ACP13 ACP13, COLIB.ACP14 ACP14
+                 WHERE ACP14.EMPR14 = ACP13.EMPR13 
+                 AND ACP14.NCTA14 = ACP13.NCTA13 
+                 AND ACP14.NCRE14 = ACP13.NCRE13 
+                 AND ACP14.NCTA14 = ? 
+                 AND ACP14.NCRE14 = ? 
+                 AND (CCAP14 + CINT14 + SIMO14 + SCJO14 > 0)
+                 AND ACP14.VCTO14 < ?
+             `;
+                const vencidoResult = await executeQuery(vencidoQuery, [cuenta, ncre[i], corte]);
+                vencidos.push(vencidoResult[0]?.SALDOVDO ?? 0);
+
+                // Consulta para obtener Cuota Capital
+                const cuotaCapitalQuery = `
+                 SELECT CCAP14 
+                 FROM COLIB.ACP13 ACP13, COLIB.ACP14 ACP14
+                 WHERE ACP14.EMPR14 = ACP13.EMPR13 
+                 AND ACP14.NCTA14 = ACP13.NCTA13 
+                 AND ACP14.NCRE14 = ACP13.NCRE13 
+                 AND ACP14.NCTA14 = ? 
+                 AND ACP14.NCRE14 = ? 
+                 AND (CCAP14 + CINT14 + SIMO14 + SCJO14 > 0)
+                 AND ACP14.VCTO14 = ?
+             `;
+                const cuotaCapitalResult = await executeQuery(cuotaCapitalQuery, [cuenta, ncre[i], corte]);
+                cuotasCapital.push(cuotaCapitalResult[0]?.CCAP14 ?? 0);
+
+                // Consulta para obtener Cuota Interés
+                const cuotaInteresQuery = `
+                 SELECT (CINT14 + SIMO14 + SCJO14) AS CINTERES 
+                 FROM COLIB.ACP14 
+                 WHERE NCTA14 = ? 
+                 AND NCRE14 = ? 
+                 AND CCAP14 > 0  
+                 AND VCTO14 = ?
+             `;
+                const cuotaInteresResult = await executeQuery(cuotaInteresQuery, [cuenta, ncre[i], corte]);
+                cuotasInteres.push(cuotaInteresResult[0]?.CINTERES ?? 0);
+
+                // Consulta para obtener Cuota Total
+                const valorCuotaQuery = `
+                 SELECT INTI13 AS CUOTA 
+                 FROM COLIB.ACP13 
+                 WHERE NCTA13 = ? 
+                 AND NCRE13 = ?
+             `;
+                const valorCuotaResult = await executeQuery(valorCuotaQuery, [cuenta, ncre[i]]);
+                cuotasTotales.push(valorCuotaResult[0]?.CUOTA ?? 0);
+            }
 
             return {
                 cuentaData: result,
@@ -238,6 +312,8 @@ const cuentaF6Model = {
                 vrTotalEsp,
                 vrTotalOrd,
                 detallesCreditos,
+                vencidos,
+                cuotasTotales,
                 salo09,
                 fecha09
             };

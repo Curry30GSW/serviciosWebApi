@@ -4,11 +4,14 @@ require('dotenv').config();
 
 class authController {
     static async login(req, res) {
-        const { cedula, password } = req.body; // Recibe el cedula y la contraseña
+        let { cedula, password, fechaExpedicion } = req.body;
 
         try {
-            // Llamamos al modelo para buscar al usuario con el cedula
-            const userResponse = await loginModel.login(cedula, password);
+            // Convertir fechaExpedicion a número antes de enviarlo al modelo
+            fechaExpedicion = Number(fechaExpedicion);
+
+            // Llamamos al modelo para buscar al usuario con la cédula y fecha de expedición
+            const userResponse = await loginModel.login(cedula, password, fechaExpedicion);
 
             // Si el usuario no se encuentra o la contraseña no es correcta
             if (!userResponse.success) {
@@ -17,11 +20,10 @@ class authController {
 
             const user = userResponse.user;
 
-            // Si el inicio de sesión es exitoso, generamos un JWT
             const token = jwt.sign(
-                { nnit: user.NNIT05, mail: user.MAIL05, descripcion: user.DESC05 },  // Payload (los datos del usuario que deseas incluir)
-                process.env.JWT_SECRET,  // Utiliza la variable de entorno JWT_SECRET
-                { expiresIn: '1h' }  // Establece el tiempo de expiración del token (1 hora en este caso)
+                { nnit: user.NNIT05, mail: user.MAIL05, descripcion: user.DESC05 },
+                process.env.JWT_SECRET,
+                { expiresIn: '2h' }
             );
 
             // Responde con los datos del usuario y el token
@@ -32,7 +34,7 @@ class authController {
                     nnit: user.NNIT05,
                     mail: user.MAIL05,
                     descripcion: user.DESC05,
-                    ultimaConexionFecha: user.ULTFEING,  // Solo la fecha (YYYY-MM-DD)
+                    ultimaConexionFecha: user.ULTFEING,
                     ultimaConexionIP: user.IPPW
                 },
                 token: token
@@ -45,5 +47,5 @@ class authController {
     }
 }
 
-// Exporta la clase directamente
+
 module.exports = authController;
