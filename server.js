@@ -16,6 +16,7 @@ const unifiedRoutes = require('./routes/unifiedRoutes')
 const cuentaF6Routes = require('./routes/cuentaF6Routes');
 const cuentasRoutes = require('./routes/cuentaSltRoutes');
 const authRoutes = require("./middlewares/authRoutes");
+const userRoutes = require("./routes/userRoutes")
 const bodyParser = require('body-parser');
 
 
@@ -86,6 +87,9 @@ app.use('/api', authRoutes);
 
 // Ruta SELECT CUENTAS
 app.use('/api', cuentasRoutes);
+
+// Ruta Registro y Olvidar PSSW
+app.use('/api', userRoutes)
 
 app.use(bodyParser.json());
 
