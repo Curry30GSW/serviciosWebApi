@@ -56,8 +56,6 @@ const login = async (cedula, password, fechaExpedicion) => {
             return { success: false, message: 'Contraseña incorrecta' };
         }
 
-        await saveSession(user.NNIT05);
-
         return { success: true, user: user };
     } catch (error) {
         console.error('Error en consulta:', error);
@@ -65,21 +63,4 @@ const login = async (cedula, password, fechaExpedicion) => {
     }
 };
 
-const saveSession = async (nit) => {
-    const ip = '192.168.0.1'; // Obtener IP dinámicamente si es necesario
-    const finicio = new Date().toISOString().slice(0, 19).replace('T', ' '); // Ajuste de formato
-    const f = '0001-01-01 00:00:00'; // Ajuste de formato para la base de datos
-
-    const sql = `
-    INSERT INTO COLIB.SESIONES (NNITPW, FECHAEPW, FECHASPW, IPPW) 
-    VALUES (?, ?, ?, ?)
-    `;
-
-    try {
-        await executeQuery(sql, [nit, finicio, f, ip]);
-    } catch (error) {
-        console.error('Error al guardar sesión:', error);
-    }
-};
-
-module.exports = { login, saveSession };
+module.exports = { login };

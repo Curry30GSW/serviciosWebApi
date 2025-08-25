@@ -4,21 +4,13 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const { connectToDatabase } = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
-const certificadoRoutes = require('./routes/certificadoRoutes');
-const creditosRoutes = require('./routes/interesesVenRoutes');
-const interesesPagRoutes = require('./routes/interesesPagRoutes');
-const creditosViviRoutes = require('./routes/creditosViviRoutes');
-const creditosOtrosRoutes = require('./routes/creditosOtrosRoutes');
-const creditosCapRoutes = require('./routes/creditosCapRoutes');
-const otrosIngresosRoutes = require('./routes/otrosIngresosRoutes');
-const fondoSoliRoutes = require('./routes/fondoSoliRoutes');
-const unifiedRoutes = require('./routes/unifiedRoutes')
 const cuentaF6Routes = require('./routes/cuentaF6Routes');
+const certificadoRentaRoutes = require('./routes/certificadoRentaRoutes');
 const cuentasRoutes = require('./routes/cuentaSltRoutes');
 const authRoutes = require("./middlewares/authRoutes");
 const userRoutes = require("./routes/userRoutes")
 const bodyParser = require('body-parser');
-
+const auditoriaRoutes = require('./routes/auditoriaRoutes');
 
 
 
@@ -38,9 +30,10 @@ app.use(session({
 
 // Habilitar CORS para permitir solicitudes desde el frontend
 app.use(cors({
-  origin: "http://127.0.0.1:5500", // Especifica el origen permitido
-  methods: ["GET", "POST", "PUT", "DELETE"], // Métodos HTTP permitidos
-  allowedHeaders: ["Content-Type", "Authorization"] // Headers permitidos
+  origin: ["http://127.0.0.1:5500", "http://localhost:5500", "http://127.0.0.1:5501"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
 
 
@@ -54,42 +47,23 @@ app.get('/', (req, res) => {
   res.send('API running');
 });
 
-// Rutas de certificados
-app.use('/api', certificadoRoutes);
-
-// Rutas de créditos capital
-app.use('/api', creditosCapRoutes);
-
-// Rutas de intereses CORRIENTE Y MORA
-app.use('/api', creditosRoutes);
-
-// Rutas de Intereses Pagados por año
-app.use('/api', interesesPagRoutes);
-
-// Rutas creditos de vivienda y otros
-app.use('/api', creditosViviRoutes);
-app.use('/api', creditosOtrosRoutes);
-
-// Rutas revalorización de aportes
-app.use('/api', otrosIngresosRoutes);
-
-// Ruta fondo solidaridad
-app.use('/api', fondoSoliRoutes);
-
-// Ruta Unificadas
-app.use('/api', unifiedRoutes)
 
 // Ruta para estado de cuenta
 app.use('/api', cuentaF6Routes);
 
 // Rutas
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
+
+
+// Ruta Registro y Olvidar PSSW
+app.use('/api', userRoutes)
+
+app.use('/api', certificadoRentaRoutes);
 
 // Ruta SELECT CUENTAS
 app.use('/api', cuentasRoutes);
 
-// Ruta Registro y Olvidar PSSW
-app.use('/api', userRoutes)
+app.use('/api', auditoriaRoutes);
 
 app.use(bodyParser.json());
 
@@ -105,6 +79,7 @@ const startServer = async () => {
     await connectToDatabase(); // Valida la conexión antes de iniciar el servidor
     app.listen(PORT, () => {
       console.log(`Servidor iniciado en http://localhost:${PORT}`);
+      console.log(`Base de datos MYSQL En LiNEA`);
     });
   } catch (error) {
     console.error('No se pudo conectar a la base de datos. Verifica tu configuración.');
