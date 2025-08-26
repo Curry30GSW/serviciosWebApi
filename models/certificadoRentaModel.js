@@ -130,6 +130,7 @@ const CertificadoRentaModel = {
 
     // 📌 Intereses (Corriente y Mora)
     async getIntereses(libreria, cuenta, fin) {
+        console.log("DEBUG getIntereses params:", libreria, cuenta, fin);
         try {
             const query = `
         SELECT
@@ -143,11 +144,14 @@ const CertificadoRentaModel = {
         WHERE ${libreria}.ACP13.NCTA13 = ?
           AND ${libreria}.ACP14.VCTO14 <= ?
       `;
+
             const result = await executeQuery(query, [cuenta, fin]);
+
             return {
-                corriente: result[0]?.Corriente ?? 0,
-                mora: result[0]?.Mora ?? 0
+                corriente: result[0]?.CORRIENTE ?? 0,
+                mora: result[0]?.MORA ?? 0
             };
+
         } catch (error) {
             console.error('Error en getIntereses:', error);
             throw error;

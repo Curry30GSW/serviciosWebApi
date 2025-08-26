@@ -87,10 +87,6 @@ const CertificadoRentaController = {
         }
     }
 
-
-
-
-
 };
 
 module.exports = CertificadoRentaController;
